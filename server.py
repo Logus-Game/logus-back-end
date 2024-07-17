@@ -33,8 +33,8 @@ def login():
         access_token = create_access_token(identity=user['id'])
         response = make_response(jsonify(access_token=access_token), 200)
         response.set_cookie('token', access_token, httponly=True, secure=True)
-        print(access_token)
-        return jsonify({'message': 'Login successful'}), 200
+        
+        return jsonify({'message': 'Login successful','token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid credentials'}), 401
 
@@ -49,7 +49,10 @@ def protected():
 def quests():
     data = request.get_json()
     id_user = data['id']
-
+    cursor = db_connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM usuario WHERE email = %s AND senha = %s", (email, senha))
+    user = cursor.fetchone()
+    cursor.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
