@@ -28,7 +28,7 @@ def login():
     email = data['email']
     password = data['password']
     cursor = db_connection.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuario WHERE email = %s AND senha = %s", (email, password))
+    cursor.execute("SELECT * FROM usuario WHERE email = %s AND senha = %s order by id desc", (email, password))
     user = cursor.fetchone()
     cursor.close()
 
