@@ -1,4 +1,5 @@
 mysql-connector-python
 python-dotenv
 flask
-Flask Flask-JWT-Extended
+flask_cors
+flask_jwt_extended
