@@ -52,11 +52,13 @@ def protected():
 @app.route('/quests', methods=['GET'])
 @jwt_required()
 def quests():
+    print('oie')
     id_user = get_jwt_identity()[0]
     cursor = db_connection.cursor(dictionary=True)
     cursor.execute(f"select a.*,q.* from usuario u join usuario_has_quest a on u.id_usuario = a.id_usuario join quest q on q.id_quest = a.id_quest where a.id_usuario = {id_user}")
     quests = cursor.fetchall()
     cursor.close()
+    
 
     if quests:
         return jsonify({'message': 'sucesso', 'quests': quests}), 200
@@ -71,8 +73,9 @@ def updateQuestStatus(quest_id):
         id_user = get_jwt_identity()[0]
         data = request.json
         status = data.get('status', None)
+        desc = data.get('desc', None)
         cursor = db_connection.cursor(dictionary=True)
-        cursor.execute(f'update usuario_has_quest set estado="{status}" where id_quest={quest_id} and id_usuario={id_user}')
+        cursor.execute(f'update usuario_has_quest set estado="{status}", descricao_conclusao="{desc}" where id_quest={quest_id} and id_usuario={id_user}')
         db_connection.commit()
 
         return jsonify({"message": "quest updated successfully"}), 200
