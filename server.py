@@ -34,7 +34,7 @@ def login():
     cursor.close()
 
     if user:
-        access_token = create_access_token(identity=[user['id_usuario'], user['nivel']])
+        access_token = create_access_token(identity=[user['id_usuario'], user['nivel'], user['id_curso']])
         response = make_response(jsonify({'access_token':access_token, 'nivel': user['nivel']}), 200)
         response.set_cookie('token', access_token, httponly=True, secure=False, samesite='Lax')
         return response
@@ -49,10 +49,9 @@ def protected():
     return jsonify(logged_in_as=current_user), 200
     
 
-@app.route('/quests', methods=['GET'])
+@app.route('/user_quests', methods=['GET'])
 @jwt_required()
-def quests():
-    print('oie')
+def user_quests():
     id_user = get_jwt_identity()[0]
     cursor = db_connection.cursor(dictionary=True)
     cursor.execute(f"select a.*,q.* from usuario u join usuario_has_quest a on u.id_usuario = a.id_usuario join quest q on q.id_quest = a.id_quest where a.id_usuario = {id_user}")
@@ -81,6 +80,20 @@ def updateQuestStatus(quest_id):
         return jsonify({"message": "quest updated successfully"}), 200
     except Exception as e:
         return jsonify({"error": f"{e}"}), 500
+
+@app.route('/quests', methods=['GET'])
+@jwt_required()
+def course_quests():
+    cursor = db_connection.cursor(dictionary=True)
+    id_curso = get_jwt_identity()[2]
+    cursor.execute(f"select * from curso c join quest q on q.id_curso = c.id where c.id={id_curso};")
+    quests = cursor.fetchall()
+    cursor.close()
+    if quests:
+        return jsonify({'message': 'sucesso', 'quests': quests}), 200
+        
+    else:
+        return jsonify(), 204
 
 @app.route('/user-data', methods=['GET'])
 @jwt_required()
