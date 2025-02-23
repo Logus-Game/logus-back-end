@@ -39,7 +39,7 @@ def login():
         response.set_cookie('token', access_token, httponly=True, secure=False, samesite='Lax')
         return response
     else:
-        return jsonify({'message':'Usuario ou senha incorretos'})
+        return jsonify({'message':'Usuario ou senha incorretos'}), 401
 
 
 @app.route('/protected', methods=['GET'])
