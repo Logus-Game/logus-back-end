@@ -81,6 +81,7 @@ def updateQuestStatus(quest_id):
     except Exception as e:
         return jsonify({"error": f"{e}"}), 500
 
+
 @app.route('/quests', methods=['GET'])
 @jwt_required()
 def course_quests():
@@ -109,7 +110,7 @@ def userData():
     else:
         return jsonify(), 204
     
-
+#ADMIN ROUTES
 @app.route('/players', methods=['GET'])
 @jwt_required()
 def players():
@@ -125,6 +126,28 @@ def players():
         return jsonify({'message': 'sucesso', 'info': data}), 200
     else:
         return jsonify(), 204
+
+@app.route('/players/info/<int:id>', methods=['PATCH'])
+@jwt_required()
+def updatePlayerInfo(id):
+    try:
+        nivel = get_jwt_identity()[1]
+        if nivel != 'AA':
+            return jsonify({'message': 'Acesso negado', 'info': ''}), 403
+        data = request.json
+        id = data.get('id', None)
+        name = data.get('name', None)
+        email = data.get('email', None)
+        level = data.get('level', None)
+        coins = data.get('coins', None)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(f'update usuario set nome = "{name}", email ="{email}", nivel="{level}", moedas="{coins}" where id_usuario={id};')
+        db_connection.commit()
+
+        return jsonify({"message": "player updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"{e}"}), 500
+
 
 
     
