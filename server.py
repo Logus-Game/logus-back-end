@@ -127,6 +127,23 @@ def players():
     else:
         return jsonify(), 204
 
+@app.route('/tranfers', methods=['GET'])
+@jwt_required()
+def tranfers():
+    nivel = get_jwt_identity()[1]
+    if nivel != 'AA':
+        return jsonify({'message': 'Acesso negado', 'info': ''}), 403
+    cursor = db_connection.cursor(dictionary=True)
+    cursor.execute(f"select * from transferencias;")
+    
+    data = cursor.fetchall()
+    cursor.close()
+
+    if data:
+        return jsonify({'message': 'sucesso', 'info': data}), 200
+    else:
+        return jsonify(), 204
+
 @app.route('/players/info/<int:id>', methods=['PATCH'])
 @jwt_required()
 def updatePlayerInfo(id):
