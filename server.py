@@ -28,7 +28,8 @@ def login():
     data = request.get_json()
     email = data['email']
     password = data['password']
-    cursor = db_connection.cursor(dictionary=True)
+    db_connection.autocommit = True
+    cursor = db_connection.cursor(dictionary=True,buffered=True)
     cursor.execute("SELECT * FROM usuario WHERE email = %s AND senha = %s order by id_usuario desc", (email, password))
     user = cursor.fetchone()
     cursor.close()
@@ -64,6 +65,23 @@ def user_quests():
         
     else:
         return jsonify(), 204
+    
+@app.route('/subscribe', methods=['POST'])
+@jwt_required()
+def subscribe():
+    id_user = get_jwt_identity()[0]
+    data = request.json
+    id_quest = data.get('quest_id', None)
+    inscricao = data.get('inscricao', None)
+    cursor = db_connection.cursor(dictionary=True)
+    cursor.execute(f"INSERT INTO usuario_has_quest (id, id_usuario, id_quest, estado, pontuacao, recompensa, validade, descricao_conclusao) VALUES (null, {id_user}, {id_quest}, 'Pendente', null, {inscricao*2}, CONVERT_TZ(NOW(), '+00:00', '-03:00'), null);")
+    
+    cursor.close()
+    
+
+    return jsonify({"message": "sucessfuly subscribed"}), 200
+        
+    
 
 @app.route('/quests/status/<int:quest_id>', methods=['PATCH'])
 @jwt_required()
@@ -79,6 +97,7 @@ def updateQuestStatus(quest_id):
 
         return jsonify({"message": "quest updated successfully"}), 200
     except Exception as e:
+        print(e)
         return jsonify({"error": f"{e}"}), 500
 
 
@@ -100,15 +119,18 @@ def course_quests():
 @jwt_required()
 def userData():
     id_user = get_jwt_identity()[0]
-    cursor = db_connection.cursor(dictionary=True)
-    cursor.execute(f"select * from usuario where id_usuario={id_user}")
-    data = cursor.fetchone()
-    cursor.close()
+    try: 
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(f"select * from usuario where id_usuario={id_user}")
+        data = cursor.fetchone()
+        cursor.close()
 
-    if data:
-        return jsonify({'message': 'sucesso', 'info': data}), 200
-    else:
-        return jsonify(), 204
+        if data:
+            return jsonify({'message': 'sucesso', 'info': data}), 200
+        else:
+            return jsonify(), 204
+    except Exception as e:
+        return jsonify({"error": f"{e}"}), 500
     
 #ADMIN ROUTES
 @app.route('/players', methods=['GET'])
@@ -127,22 +149,26 @@ def players():
     else:
         return jsonify(), 204
 
-@app.route('/tranfers', methods=['GET'])
+@app.route('/transfers', methods=['GET'])
 @jwt_required()
-def tranfers():
+def transfers():
     nivel = get_jwt_identity()[1]
     if nivel != 'AA':
         return jsonify({'message': 'Acesso negado', 'info': ''}), 403
-    cursor = db_connection.cursor(dictionary=True)
-    cursor.execute(f"select * from transferencias;")
-    
-    data = cursor.fetchall()
-    cursor.close()
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(f"select t.*, u.nome from transferencias t join usuario u on t.usuario_id = u.id_usuario order by data_hora desc;")
+        
+        data = cursor.fetchall()
+        cursor.close()
+        print(data)
 
-    if data:
-        return jsonify({'message': 'sucesso', 'info': data}), 200
-    else:
-        return jsonify(), 204
+        if data:
+            return jsonify({'message': 'sucesso', 'info': data}), 200
+        else:
+            return jsonify(), 204
+    except Exception as e:
+        return jsonify({"error": f"{e}"}), 500
 
 @app.route('/players/info/<int:id>', methods=['PATCH'])
 @jwt_required()
