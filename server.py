@@ -65,18 +65,19 @@ def user_quests():
         
     else:
         return jsonify(), 204
+
+#jogador se inscrever 
+# @app.route('/subscribe', methods=['POST'])
+# @jwt_required()
+# def subscribe():
+#     id_user = get_jwt_identity()[0]
+#     data = request.json
+#     id_quest = data.get('quest_id', None)
+#     inscricao = data.get('inscricao', None)
+#     cursor = db_connection.cursor(dictionary=True)
+#     cursor.execute(f"INSERT INTO usuario_has_quest (id, id_usuario, id_quest, estado, pontuacao, recompensa, validade, descricao_conclusao) VALUES (null, {id_user}, {id_quest}, 'Pendente', null, {inscricao}, CONVERT_TZ(NOW(), '+00:00', '-03:00'), null);")
     
-@app.route('/subscribe', methods=['POST'])
-@jwt_required()
-def subscribe():
-    id_user = get_jwt_identity()[0]
-    data = request.json
-    id_quest = data.get('quest_id', None)
-    inscricao = data.get('inscricao', None)
-    cursor = db_connection.cursor(dictionary=True)
-    cursor.execute(f"INSERT INTO usuario_has_quest (id, id_usuario, id_quest, estado, pontuacao, recompensa, validade, descricao_conclusao) VALUES (null, {id_user}, {id_quest}, 'Pendente', null, {inscricao*2}, CONVERT_TZ(NOW(), '+00:00', '-03:00'), null);")
-    
-    cursor.close()
+#     cursor.close()
     
 
     return jsonify({"message": "sucessfuly subscribed"}), 200
@@ -101,7 +102,7 @@ def updateQuestStatus(quest_id):
         return jsonify({"error": f"{e}"}), 500
 
 
-@app.route('/quests', methods=['GET'])
+@app.route('/course_quests', methods=['GET'])
 @jwt_required()
 def course_quests():
     cursor = db_connection.cursor(dictionary=True)
@@ -191,7 +192,40 @@ def updatePlayerInfo(id):
     except Exception as e:
         return jsonify({"error": f"{e}"}), 500
 
+@app.route('/subscribe', methods=['POST'])
+@jwt_required()
+def subscribe():
+    data = request.json
+    id_quest = data.get('quest_id', None)
+    id_user = data.get('id_user', None)
+    recompensa = data.get('recompensa', None)
+    cursor = db_connection.cursor(dictionary=True)
+    cursor.execute(f"INSERT INTO usuario_has_quest (id, id_usuario, id_quest, estado, pontuacao, recompensa, validade, descricao_conclusao) VALUES (null, {id_user}, {id_quest}, 'Pendente', null, {recompensa}, CONVERT_TZ(NOW(), '+00:00', '-03:00'), null);")
+    
+    cursor.close()
+    
 
+    return jsonify({"message": "sucessfuly subscribed"}), 200
+
+@app.route('/quests', methods=['GET'])
+@jwt_required()
+def quests():
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        nivel = get_jwt_identity()[1]
+        if nivel != 'AA':
+            return jsonify({'message': 'Acesso negado', 'info': ''}), 403
+        cursor.execute(f"select * from quest;")
+        quests = cursor.fetchall()
+        cursor.close()
+        if quests:
+            return jsonify({'message': 'sucesso', 'quests': quests}), 200
+            
+        else:
+            return jsonify(), 204
+
+    except Exception as e:
+        return jsonify({"error": f"{e}"}), 500
 
     
 if __name__ == '__main__':
